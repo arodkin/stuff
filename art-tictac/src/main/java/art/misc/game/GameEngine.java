@@ -4,26 +4,25 @@ import java.util.List;
 import java.util.TreeMap;
 
 
-public class GameEngine<M extends Move> {
+public class GameEngine {
 	
 	
-	private Node<BoardState<M>> decisionTree;
-	private Board<M> board;
+	private Node<Board> decisionTree;
+	private Board board;
 	private int count = 0;
 	
-	public  GameEngine(Board<M> b, String firstPlayer) throws Exception{
-		decisionTree  = new Node<BoardState<M>>(null,null);
+	public  GameEngine(Board b, String firstPlayer) throws Exception{
+		decisionTree  = new Node<Board>(null,null);
 		board = b;
 		initDecisionTree(board,firstPlayer, decisionTree);
 	}
 	
-	private  void initDecisionTree(Board<M> b, String player, Node<BoardState<M>> parent) throws Exception {
-		for (M c : b.getPossibleMoves()) {
-			Board<M> b1 = b.clone();
-			b1.placeMove(c, player);
+	private  void initDecisionTree(Board b, String player, Node<Board> parent) throws Exception {
+		for (Move m : b.getPossibleMoves(player)) {
+			Board b1 = b.clone();
+			b1.placeMove(m);
 			
-			BoardState<M> ttdd = new BoardState<M>(b1, c, player);
-			Node<BoardState<M>> n = createNode(ttdd,parent);
+			Node<Board> n = createNode(b1,parent);
 			
 			
 			parent.addChild(n);
@@ -37,18 +36,17 @@ public class GameEngine<M extends Move> {
 		
 	}
 	
-	public M bestMove(String player) throws Exception {
-		List<Node<BoardState<M>>> children = decisionTree.findFirstLevelChildren();
-		TreeMap<Integer,M> sortedMoves = new TreeMap<Integer,M>();
-		for (M m : board.getPossibleMoves()) {
-			Board<M> b = board.clone();
-			b.placeMove(m, player);
+	public Move bestMove(String player) throws Exception {
+		List<Node<Board>> children = decisionTree.findFirstLevelChildren();
+		TreeMap<Integer,Move> sortedMoves = new TreeMap<Integer,Move>();
+		for (Move m : board.getPossibleMoves(player)) {
+			Board b = board.clone();
+			b.placeMove(m);
 			//Circumvent
 			if(b.isWinningPosition(player))
 				return m;
-			BoardState<M> bs = new BoardState<M>(b, m, player);
-			Node<BoardState<M>> newPossibleState = findAppropriatePosition(bs,children );
-			List<Node<BoardState<M>>> possibleFinalStates = getPossibleOutcomesForPosition(newPossibleState);
+			Node<Board> newPossibleState = findAppropriatePosition(b,children );
+			List<Node<Board>> possibleFinalStates = getPossibleOutcomesForPosition(newPossibleState);
 			int score = scoreMove(possibleFinalStates, player);
 			sortedMoves.put(score, m);
 		}
@@ -57,11 +55,11 @@ public class GameEngine<M extends Move> {
 	}
 	
 	
-	private int scoreMove(List<Node<BoardState<M>>> possibleFinalStates, String player) {
+	private int scoreMove(List<Node<Board>> possibleFinalStates, String player) {
 		int totalScore = 0;
-		for(Node<BoardState<M>> nbs : possibleFinalStates) {
-			Board<M> b = nbs.getData().getBoard();
-			GameEnding<M> ge = new GameEnding<M>(nbs);
+		for(Node<Board> nbs : possibleFinalStates) {
+			Board b = nbs.getData();
+			GameEnding ge = new GameEnding(nbs);
 			String oppositePlayer = switchPlayer(player);
 			if(b.isWinningPosition(player))
 				totalScore +=10 - ge.getDistanceTo();
@@ -74,23 +72,22 @@ public class GameEngine<M extends Move> {
 	}
 
 
-	private Node<BoardState<M>> findAppropriatePosition(BoardState<M> bs,
-			List<Node<BoardState<M>>> children) throws Exception {
-		for(Node<BoardState<M>> n : children) {
-			if(n.getData().equals(bs))
+	private Node<Board> findAppropriatePosition(Board b,
+			List<Node<Board>> children) throws Exception {
+		for(Node<Board> n : children) {
+			if(n.getData().equals(b))
 				return n;
 		}
 		
-		throw new Exception("Unable to find appropriate board state for " + bs.toString());
+		throw new Exception("Unable to find appropriate board state for " + b.toString());
 	}
 
 
-	public void placeMove(M m, String player) throws Exception{
-		board.placeMove(m, player);
-		BoardState<M> bs = new BoardState<M>(board, m, player);
-		List<Node<BoardState<M>>> children = decisionTree.findFirstLevelChildren();
-		for(Node<BoardState<M>> nbs : children) {
-			if(nbs.getData().equals(bs)) {
+	public void placeMove(Move m) throws Exception{
+		board.placeMove(m);
+		List<Node<Board>> children = decisionTree.findFirstLevelChildren();
+		for(Node<Board> nbs : children) {
+			if(nbs.getData().equals(board)) {
 				decisionTree = nbs;
 			} else {
 				nbs.clearAll();
@@ -102,8 +99,8 @@ public class GameEngine<M extends Move> {
 
 	
 	
-	private List<Node<BoardState<M>>> getPossibleOutcomesForPosition(Node<BoardState<M>> n) {
-		List<Node<BoardState<M>>> nodes = n.getLeafData();
+	private List<Node<Board>> getPossibleOutcomesForPosition(Node<Board> n) {
+		List<Node<Board>> nodes = n.getLeafData();
 		return nodes;
 	}
 	
@@ -114,8 +111,8 @@ public class GameEngine<M extends Move> {
 		return "X";
 	}
 
-	private  Node<BoardState<M>> createNode(BoardState<M> ttdd, Node<BoardState<M>> parent) {
-		Node<BoardState<M>> n = new Node<BoardState<M>>(ttdd,parent);
+	private  Node<Board> createNode(Board b, Node<Board> parent) {
+		Node<Board> n = new Node<Board>(b,parent);
 		return n;
 	}
 

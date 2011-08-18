@@ -3,7 +3,9 @@ package art.misc.game.tictac;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
+import art.misc.game.Cell;
 import art.misc.game.GameEngine;
+import art.misc.game.Move;
 
 public class TicTacGame {
 
@@ -13,17 +15,15 @@ public class TicTacGame {
 
 		TicTacBoard b = new TicTacBoard();
 		
-
-		TictacMove m;
 		try {
 			
-			GameEngine<TictacMove> gp = new GameEngine<TictacMove>(b,"X");
-			b.draw();
+			GameEngine gp = new GameEngine(b,"X");
+			b.drawBoard();
 			while(true) {
-				m = gp.bestMove("X");
-				gp.placeMove(m, "X");
+				Move m = gp.bestMove("X");
+				gp.placeMove(m);
 
-				b.draw();
+				b.drawBoard();
 				
 				if(b.isWinningPosition("X")) {
 					System.out.println("I win");
@@ -34,10 +34,10 @@ public class TicTacGame {
 				System.out.println("MOVE!");
 
 				String s = in.readLine();
-				TictacMove m1 = parse(s);
-				gp.placeMove(m1, "O");
+				Move m1 = parse(s);
+				gp.placeMove(m1);
 				
-				b.draw();
+				b.drawBoard();
 				if(b.isWinningPosition("O")) {
 					System.out.println("U win");
 					break;
@@ -54,10 +54,10 @@ public class TicTacGame {
 		}
 	}
 
-	private static TictacMove parse(String s) {
+	private static Move parse(String s) {
 		String vertical = s.substring(0, 1);
 		String horizontal = s.substring(1);
-		return new TictacMove(vertical,horizontal);
+		return new Move("O",new Cell(vertical,horizontal), new Cell(vertical,horizontal));
 	}
 
 }

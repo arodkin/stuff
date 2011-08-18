@@ -3,98 +3,68 @@ package art.misc.game.tictac;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.LinkedList;
 import java.util.Map;
-import java.util.Set;
+
 
 import art.misc.game.Board;
+import art.misc.game.Cell;
+import art.misc.game.Move;
 
 public class TicTacBoard extends Board{
 	
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime
-				* result
-				+ ((filledCellsByPlayers == null) ? 0 : filledCellsByPlayers
-						.hashCode());
-		return result;
-	}
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		TicTacBoard other = (TicTacBoard) obj;
-		if (filledCellsByPlayers == null) {
-			if (other.filledCellsByPlayers != null)
-				return false;
-		} else if (!filledCellsByPlayers.equals(other.filledCellsByPlayers))
-			return false;
-		return true;
-	}
-	private LinkedHashMap<TictacMove,String> filledCellsByPlayers = new LinkedHashMap<TictacMove,String>();
-	
-	static List<TictacMove> allCells;
-	String lastPlayerMoved;
+	static LinkedList<Cell> allCells;
+
 	
 	
 	static {
-		allCells = new ArrayList<TictacMove>();
-		allCells.add(new TictacMove("A","1"));
-		allCells.add(new TictacMove("A","2"));
-		allCells.add(new TictacMove("A","3"));
-		allCells.add(new TictacMove("B","1"));
-		allCells.add(new TictacMove("B","2"));
-		allCells.add(new TictacMove("B","3"));
-		allCells.add(new TictacMove("C","1"));
-		allCells.add(new TictacMove("C","2"));
-		allCells.add(new TictacMove("C","3"));
+		allCells = new LinkedList<Cell>();
+		allCells.add(new Cell("A","1"));
+		allCells.add(new Cell("A","2"));
+		allCells.add(new Cell("A","3"));
+		allCells.add(new Cell("B","1"));
+		allCells.add(new Cell("B","2"));
+		allCells.add(new Cell("B","3"));
+		allCells.add(new Cell("C","1"));
+		allCells.add(new Cell("C","2"));
+		allCells.add(new Cell("C","3"));
 	}
 	
-	public TicTacBoard() {
-		
-	}
-	private TicTacBoard(LinkedHashMap<TictacMove, String> filledCellsByPlayer2) {
-		this.filledCellsByPlayers = filledCellsByPlayer2;
-	}
-
-	
-	public TicTacBoard clone() {
-		return new TicTacBoard(new LinkedHashMap<TictacMove,String>(filledCellsByPlayers));
+	protected TicTacBoard newInstance() {
+		return new TicTacBoard();
 	}
 	
 	/* (non-Javadoc)
 	 * @see art.misc.tictac.board.Board#getPossibleMoves()
 	 */
 	@Override
-	public Collection<TictacMove> getPossibleMoves() {
-		Set<TictacMove> filledCells = filledCellsByPlayers.keySet();
-		Collection<TictacMove> rv = new ArrayList<TictacMove>();
-		for ( TictacMove c : allCells) {
+	public Collection<Move> getRemainingMoves(LinkedList<Move> madeMoves, String player) {
+		Collection<Cell> filledCells = new ArrayList<Cell>();
+		for (Move m: madeMoves) {
+			filledCells.add(m.getTo());
+		}
+		Collection<Move> rv = new ArrayList<Move>();
+		for ( Cell c : allCells) {
 			if(!filledCells.contains(c))
-				rv.add(c);
+				rv.add(new Move(player, c,c));
 		}
 		
 		return rv;
 	}
 	
-	private boolean allFilled() {
-		return filledCellsByPlayers.size()  == 9;
+	@Override
+	protected boolean noMoreMoves(LinkedList<Move> moveList) {
+		return moveList.size()  == 9;
 	}
 	
 	
 	@Override
-	public boolean isWinningPosition(String player) {
-		Collection<TictacMove> cellsFilledByPlayer = new ArrayList<TictacMove>();
-		for(TictacMove c : filledCellsByPlayers.keySet()) {
-			if(player.equals(filledCellsByPlayers.get(c)))
-				cellsFilledByPlayer.add(c);
+	public boolean doIsWinningPosition(String player, LinkedList<Move> madeMoves) {
+		
+		Collection<Cell> cellsFilledByPlayer = new LinkedList<Cell>();
+		for(Move m : madeMoves) {
+			if(player.equals(m.getPlayer()))
+				cellsFilledByPlayer.add(m.getTo());
 		}
 		if(cellsFilledByPlayer.size() < 3) 
 			return false;
@@ -103,19 +73,19 @@ public class TicTacBoard extends Board{
 		
 	}
 
-	private boolean diagonal(Collection<TictacMove> cellsFilledByPlayer) {
+	private boolean diagonal(Collection<Cell> cellsFilledByPlayer) {
 		boolean center = false;
 		boolean a1 = false,a3 = false,c1 = false, c3 = false;
-		for(TictacMove c :cellsFilledByPlayer) {
-			if(c.horizontal.equals("2")) {
-				if(c.vertical.equals("B")) 
+		for(Cell c :cellsFilledByPlayer) {
+			if(c.getHorizontal().equals("2")) {
+				if(c.getVertical().equals("B")) 
 					center = true;
 			}
 			else {
-				if(c.vertical.equals("A"))
-					if(c.horizontal.equals("1")) a1 = true; else a3 = true;
-				else if(c.vertical.equals("C")) 
-					if(c.horizontal.equals("1")) c1 = true; else c3 = true;
+				if(c.getVertical().equals("A"))
+					if(c.getHorizontal().equals("1")) a1 = true; else a3 = true;
+				else if(c.getVertical().equals("C")) 
+					if(c.getHorizontal().equals("1")) c1 = true; else c3 = true;
 					
 				
 			}
@@ -124,18 +94,18 @@ public class TicTacBoard extends Board{
 		
 	}
 
-	private boolean threeSameHorizontals(Collection<TictacMove> cellsFilledByPlayer) {
+	private boolean threeSameHorizontals(Collection<Cell> cellsFilledByPlayer) {
 		return gotThreecounts(cellsFilledByPlayer, false);
 	}
 	
-	private boolean gotThreecounts(Collection<TictacMove> cellsFilledByPlayer, boolean vertical) {
+	private boolean gotThreecounts(Collection<Cell> cellsFilledByPlayer, boolean vertical) {
 		Map<String,Integer> hCounts = new HashMap<String,Integer>();
-			for (TictacMove c : cellsFilledByPlayer) {
+			for (Cell c : cellsFilledByPlayer) {
 				String h;
 				if(vertical)
-					h = c.vertical;
+					h = c.getVertical();
 				else
-					h = c.horizontal;
+					h = c.getHorizontal();
 				Integer count = hCounts.get(h);
 				if(count == null) {
 					count = 0;
@@ -150,23 +120,20 @@ public class TicTacBoard extends Board{
 			return false;
 	}
 	
-	/* (non-Javadoc)
-	 * @see art.misc.tictac.board.Board#gameOver()
-	 */
-	@Override
-	public boolean gameOver() {
-		if(allFilled())
-			return true;
-		return isWinningPosition(lastPlayerMoved);
-	}
-
-	private boolean threeSameVerticals(Collection<TictacMove> cellsFilledByPlayer) {
+	
+	private boolean threeSameVerticals(Collection<Cell> cellsFilledByPlayer) {
 		return gotThreecounts(cellsFilledByPlayer, true);
 	}
 	
 	
 	@Override
-	public void draw() {
+	public void doDrawBoard(LinkedList<Move> moves) {
+		
+		HashMap<Cell,String> filledCellsByPlayers = new HashMap<Cell, String>();
+		
+		for (Move m : moves) {
+			filledCellsByPlayers.put(m.getTo(), m.getPlayer());
+		}
 		System.out.print((filledCellsByPlayers.get(allCells.get(0)) != null) ? filledCellsByPlayers.get(allCells.get(0)): " ");
 		System.out.print("|");
 		System.out.print((filledCellsByPlayers.get(allCells.get(1)) != null) ? filledCellsByPlayers.get(allCells.get(1)): " ");
@@ -201,7 +168,7 @@ public class TicTacBoard extends Board{
 	public int score(String player) {
 		if(isWinningPosition(player))
 			return 1;
-		if(allFilled())
+		if(isDraw())
 			return 0;
 		return -2;
 		
